@@ -1,0 +1,34 @@
+{
+  "flags": [
+    {
+      "id": "new_checkout_flow",
+      "enabled": true,
+      "rule": "Beta Users Only",
+      "rollout_percentage": 100
+    },
+    {
+      "id": "dark_mode_beta",
+      "enabled": true,
+      "rule": "Everyone",
+      "rollout_percentage": 100
+    },
+    {
+      "id": "ai_recommendations",
+      "enabled": true,
+      "rule": "Everyone",
+      "rollout_percentage": 10
+    }
+  ],
+  "configs": [
+    {
+      "key": "welcome_message",
+      "value": "Hello, World!",
+      "type": "string"
+    },
+    {
+      "key": "max_login_attempts",
+      "value": 5,
+      "type": "number"
+    }
+  ]
+}
