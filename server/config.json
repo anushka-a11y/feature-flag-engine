@@ -1,0 +1,29 @@
+{
+  "flags": {
+    "dark_mode_beta": {
+      "enabled": true,
+      "rollout": 100,
+      "groups": [
+        "everyone"
+      ]
+    },
+    "new_checkout_flow": {
+      "enabled": true,
+      "rollout": 20,
+      "groups": [
+        "beta"
+      ]
+    },
+    "ai_recommendations": {
+      "enabled": true,
+      "rollout": 10,
+      "groups": [
+        "everyone"
+      ]
+    }
+  },
+  "configs": {
+    "welcome_message": "Hello, World!",
+    "max_login_attempts": 5
+  }
+}
