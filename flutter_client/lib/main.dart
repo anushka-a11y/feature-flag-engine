@@ -1,55 +1,40 @@
 import 'package:flutter/material.dart';
-import 'flag_service.dart';
+import 'feature_flag.dart';
 import 'home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialise the SDK — connects WebSocket & fetches initial config.
+  // Change the URL to your machine's IP when testing on a real device,
+  // e.g. 'http://192.168.1.42:8080'
+  await FeatureFlag.initialize(
+    'http://localhost:8080',
+    userId: 'alice',
+    group:  'beta',
+    isBeta: true,
+  );
+
   runApp(const FlagApp());
 }
 
-class FlagApp extends StatefulWidget {
+class FlagApp extends StatelessWidget {
   const FlagApp({super.key});
 
   @override
-  State<FlagApp> createState() => _FlagAppState();
-}
-
-class _FlagAppState extends State<FlagApp> {
-  final _service = FlagService();
-  FlagSnapshot? _snapshot;
-  String _status = 'Connecting...';
-
-  @override
-  void initState() {
-    super.initState();
-    _service.start();
-    _service.stream.listen(
-      (snapshot) => setState(() {
-        _snapshot = snapshot;
-        _status = 'Connected';
-      }),
-      onError: (_) => setState(() => _status = 'Error'),
-    );
-
-    // If no response within 5s, show disconnected
-    Future.delayed(const Duration(seconds: 5), () {
-      if (_snapshot == null && mounted) {
-        setState(() => _status = 'Disconnected');
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _service.stop();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Feature Flag Demo',
-      debugShowCheckedModeBanner: false,
-      home: HomeScreen(snapshot: _snapshot, connectionStatus: _status),
+    // StreamBuilder at the root — any server push rebuilds the whole tree.
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: FeatureFlag.stream,
+      builder: (context, _) {
+        final isDark = FeatureFlag.isEnabled('dark_mode_beta');
+        return MaterialApp(
+          title: 'Feature Flag Engine',
+          debugShowCheckedModeBanner: false,
+          theme: isDark ? ThemeData.dark() : ThemeData.light(),
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }
