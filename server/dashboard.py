@@ -1,16 +1,3 @@
-"""
-Feature Flag & Config Manager — Textual TUI Dashboard
-======================================================
-Keyboard bindings
-  Space       Toggle selected flag ON / OFF
-  Enter       Edit rule (rollout %, groups) for selected flag
-              OR edit value for selected config
-  Tab         Move focus between Flags table and Configs table
-  Shift+Tab   Reverse tab
-  R           Reload config from disk (+ broadcast via POST /reload)
-  Q           Quit
-"""
-
 import json
 import threading
 from pathlib import Path
@@ -35,8 +22,6 @@ from rich.text import Text
 SERVER_URL  = "http://localhost:8080"
 CONFIG_FILE = Path(__file__).parent / "config.json"
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def load_config() -> dict:
     with open(CONFIG_FILE, "r") as f:
@@ -66,8 +51,6 @@ def reload_server() -> None:
     except Exception:
         pass
 
-
-# ── Edit Groups / Rollout Modal ───────────────────────────────────────────────
 
 class EditFlagModal(ModalScreen):
     """Pop-up to edit a flag's rollout % and groups."""
@@ -127,8 +110,6 @@ class EditFlagModal(ModalScreen):
         self.dismiss({"rollout": rollout, "groups": groups})
 
 
-# ── Edit Config Modal ─────────────────────────────────────────────────────────
-
 class EditConfigModal(ModalScreen):
     """Pop-up to edit a remote-config value."""
 
@@ -170,8 +151,6 @@ class EditConfigModal(ModalScreen):
             self.dismiss(None)
 
 
-# ── Main App ──────────────────────────────────────────────────────────────────
-
 class FlagManagerApp(App):
 
     CSS = """
@@ -204,15 +183,13 @@ class FlagManagerApp(App):
         Binding("r",         "reload",        "Reload"),
     ]
 
-    TITLE = "🚀  Feature Flag & Config Manager"
+    TITLE = "Feature Flag & Config Manager"
 
     def __init__(self):
         super().__init__()
         self._config          = load_config()
         self._status          = f"Ready  —  server: {SERVER_URL}"
         self._focused_table   = "flags"
-
-    # ── Layout ────────────────────────────────────────────────────────────────
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -233,8 +210,6 @@ class FlagManagerApp(App):
         self._build_flags_table()
         self._build_configs_table()
         self.query_one("#flags-table", DataTable).focus()
-
-    # ── Table builders ────────────────────────────────────────────────────────
 
     def _build_flags_table(self) -> None:
         t: DataTable = self.query_one("#flags-table", DataTable)
@@ -271,8 +246,6 @@ class FlagManagerApp(App):
         self._status = msg
         self.query_one("#status-bar", Static).update(msg)
 
-    # ── Focus tracking ────────────────────────────────────────────────────────
-
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         self._focused_table = event.data_table.id.replace("-table", "")
 
@@ -281,11 +254,9 @@ class FlagManagerApp(App):
         if hasattr(widget, "id") and widget.id in ("flags-table", "configs-table"):
             self._focused_table = widget.id.replace("-table", "")
 
-    # ── Actions ───────────────────────────────────────────────────────────────
-
     def action_toggle_flag(self) -> None:
         if self._focused_table != "flags":
-            self._set_status("⚠  Select a flag row first (Tab to switch)")
+            self._set_status("Select a flag row first (Tab to switch)")
             return
         t: DataTable = self.query_one("#flags-table", DataTable)
         if t.cursor_row is None:
@@ -297,7 +268,7 @@ class FlagManagerApp(App):
         flag["enabled"] = not flag["enabled"]
         state = "ON" if flag["enabled"] else "OFF"
         patch_flag(flag_id, {"enabled": flag["enabled"]})
-        self._set_status(f"✔  '{flag_id}' toggled → {state}")
+        self._set_status(f"'{flag_id}' toggled → {state}")
         self._refresh_all()
         t.focus()
         self.call_after_refresh(lambda: t.move_cursor(row=t.cursor_row))
@@ -323,7 +294,7 @@ class FlagManagerApp(App):
                 patch_flag(flag_id, result)
                 self._refresh_all()
                 self._set_status(
-                    f"✔  '{flag_id}' → rollout={result['rollout']}%  "
+                    f"'{flag_id}' → rollout={result['rollout']}%  "
                     f"groups={result['groups']}"
                 )
 
@@ -349,7 +320,7 @@ class FlagManagerApp(App):
                 self._config["configs"][key] = coerced
                 patch_config(key, coerced)
                 self._refresh_all()
-                self._set_status(f"✔  Config '{key}' → {coerced}")
+                self._set_status(f"Config '{key}' → {coerced}")
 
         self.push_screen(EditConfigModal(key, current_value), handle)
 
@@ -357,21 +328,17 @@ class FlagManagerApp(App):
         self._config = load_config()
         self._refresh_all()
         reload_server()
-        self._set_status("🔄  Reloaded from disk + broadcast to clients")
-
-
-# ── Entry point ───────────────────────────────────────────────────────────────
+        self._set_status("Reloaded from disk + broadcast to clients")
 
 if __name__ == "__main__":
     import subprocess, sys, time
 
-    # Start FastAPI server in background
     server_proc = subprocess.Popen(
         [sys.executable, str(Path(__file__).parent / "app.py")],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    time.sleep(1)  # give server time to bind
+    time.sleep(1)  
 
     try:
         FlagManagerApp().run()

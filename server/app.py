@@ -1,17 +1,4 @@
-"""
-Feature Flag & Config Manager — FastAPI Backend
-================================================
-Endpoints
-  GET  /config              → full config snapshot
-  PATCH /flag/{name}        → update enabled / rollout / groups for one flag
-  PATCH /config/{key}       → update one remote-config value
-  POST /reload              → re-read disk & broadcast to all WS clients
-  GET  /audit               → last 100 audit entries
 
-WebSocket
-  ws://<host>:8080/ws       → receive {"type": "config_update", "data": {...}}
-                               immediately on connect and after every change
-"""
 
 from __future__ import annotations
 
@@ -24,13 +11,11 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
 
 BASE = Path(__file__).parent
 CONFIG_FILE = BASE / "config.json"
 AUDIT_FILE  = BASE / "audit.json"
 
-# ── Seed config if missing ────────────────────────────────────────────────────
 
 DEFAULT_CONFIG: dict = {
     "flags": {
@@ -62,7 +47,6 @@ if not AUDIT_FILE.exists():
     AUDIT_FILE.write_text("[]")
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def load_config() -> dict:
     return json.loads(CONFIG_FILE.read_text())
@@ -87,7 +71,6 @@ def append_audit(action: str, target: str, old: Any, new: Any) -> None:
     AUDIT_FILE.write_text(json.dumps(entries[-100:], indent=2))
 
 
-# ── WebSocket connection manager ──────────────────────────────────────────────
 
 class ConnectionManager:
     def __init__(self) -> None:
@@ -115,7 +98,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(title="Feature Flag Engine", version="2.0.0")
 
@@ -127,7 +109,6 @@ app.add_middleware(
 )
 
 
-# ── REST endpoints ────────────────────────────────────────────────────────────
 
 @app.get("/config")
 def get_config() -> dict:
@@ -197,15 +178,12 @@ def get_audit() -> list:
         return []
 
 
-# ── WebSocket endpoint ────────────────────────────────────────────────────────
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket) -> None:
     await manager.connect(ws)
     try:
-        # Push full config immediately on connect
         await ws.send_json({"type": "config_update", "data": load_config()})
-        # Keep the connection alive (client sends pings or nothing)
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:
@@ -214,7 +192,6 @@ async def websocket_endpoint(ws: WebSocket) -> None:
         manager.disconnect(ws)
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("[Server] Feature Flag Engine running on http://localhost:8080")
