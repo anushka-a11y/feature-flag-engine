@@ -177,7 +177,6 @@ class FlagManagerApp(App):
     BINDINGS = [
         Binding("q",         "quit",          "Quit"),
         Binding("space",     "toggle_flag",   "Toggle Flag"),
-        Binding("enter",     "edit_selected", "Edit"),
         Binding("tab",       "focus_next",    "Next Table",  show=False),
         Binding("shift+tab", "focus_previous","Prev Table",  show=False),
         Binding("r",         "reload",        "Reload"),
@@ -249,6 +248,12 @@ class FlagManagerApp(App):
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         self._focused_table = event.data_table.id.replace("-table", "")
 
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        if event.data_table.id == "flags-table":
+            self._open_edit_flag_modal()
+        elif event.data_table.id == "configs-table":
+            self._open_edit_config_modal()
+        
     def on_focus(self, event: events.Focus) -> None:
         widget = event.widget
         if hasattr(widget, "id") and widget.id in ("flags-table", "configs-table"):
