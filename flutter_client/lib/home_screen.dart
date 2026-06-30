@@ -209,7 +209,7 @@ class _SimConsole extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg     = dark ? const Color(0xFF1E1E1E) : Colors.white;
-    final border = dark ? Colors.white12 : Colors.black15;
+    final border = dark ? Colors.white12 : Colors.black12;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: bg,
